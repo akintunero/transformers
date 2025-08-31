@@ -27,6 +27,7 @@ import json
 import os.path
 import re
 import tempfile
+import warnings
 from contextlib import contextmanager
 from pathlib import Path
 
@@ -36,6 +37,10 @@ from huggingface_hub import HfApi
 
 from optimum_benchmark import Benchmark
 from optimum_benchmark_wrapper import main
+
+from transformers import logging
+
+logger = logging.get_logger(__name__)
 
 
 PATH_TO_REPO = Path(__file__).parent.parent.resolve()
@@ -105,8 +110,14 @@ def summarize(run_dir, metrics, expand_metrics=False):
             current = metrics_values
             for key in keys:
                 # Avoid KeyError when a user's specified metric has typo.
-                # TODO: Give warnings.
+                # Give warnings for metric typos to help users debug their configuration.
                 if key not in value:
+                    warnings.warn(
+                        f"Metric key '{key}' not found in report. Available keys: {list(value.keys())}. "
+                        f"This might be a typo in the metric specification: {metric}",
+                        UserWarning,
+                        stacklevel=2
+                    )
                     continue
                 value = value[key]
 
